@@ -1,0 +1,390 @@
+@import 'tailwindcss';
+
+/* Tailwind Typography plugin (for markdown rendering) */
+@plugin '@tailwindcss/typography';
+
+/* ============================================================
+ * HmwCard 设计系统 v2 — "Issuing Console"
+ * 编辑感 + 终端感混合美学
+ * 暖奶油底 + 深墨黑 + 琥珀金强调
+ * ============================================================ */
+@theme {
+  /* —— 暖奶油背景（不是纯白，更柔和） —— */
+  --color-cream-50: #FAFAF7;
+  --color-cream-100: #F5F5F0;
+  --color-cream-200: #EFEFE8;
+  --color-cream-300: #E4E4DC;
+
+  /* —— 深墨黑（不是纯黑，留一丝暖意） —— */
+  --color-ink-950: #050506;
+  --color-ink-900: #0A0A0B;
+  --color-ink-850: #0F0F11;
+  --color-ink-800: #131316;
+  --color-ink-700: #1C1C20;
+  --color-ink-600: #26262B;
+  --color-ink-500: #34343A;
+
+  /* —— 文字色阶 —— */
+  --color-fg: #0A0A0A;
+  --color-fg-muted: #52525B;
+  --color-fg-subtle: #8B8B8F;
+  --color-fg-inverse: #FAFAF7;
+  --color-fg-inverse-muted: #A1A1AA;
+
+  /* —— 强调色：琥珀金（warm amber）—— 金钱、信任、温度 */
+  --color-accent-50: #FFFBEB;
+  --color-accent-100: #FEF3C7;
+  --color-accent-200: #FDE68A;
+  --color-accent-300: #FCD34D;
+  --color-accent-400: #FBBF24;
+  --color-accent-500: #F59E0B;
+  --color-accent-600: #D97706;
+  --color-accent-700: #B45309;
+
+  /* —— 成功色：翠绿（用于 live 状态、checkmark）—— */
+  --color-live-400: #34D399;
+  --color-live-500: #10B981;
+  --color-live-600: #059669;
+
+  /* —— 边框色阶 —— */
+  --color-border: #E4E4DC;
+  --color-border-strong: #D4D4CC;
+  --color-border-dark: #26262B;
+
+  /* —— 字体 —— */
+  --font-display: 'Inter Tight', 'Inter', 'PingFang SC', 'Noto Sans SC', -apple-system, sans-serif;
+  --font-sans: 'Inter', 'PingFang SC', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-cjk: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* —— 圆角（偏小，更精致）—— */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /* —— 阴影（柔和、低饱和）—— */
+  --shadow-soft: 0 1px 2px 0 rgba(10, 10, 11, 0.04), 0 1px 3px 0 rgba(10, 10, 11, 0.06);
+  --shadow-lift: 0 4px 12px -2px rgba(10, 10, 11, 0.06), 0 2px 6px -2px rgba(10, 10, 11, 0.04);
+  --shadow-float: 0 12px 32px -8px rgba(10, 10, 11, 0.12), 0 4px 12px -4px rgba(10, 10, 11, 0.06);
+}
+
+/* ============================================================
+ * 全局基础
+ * ============================================================ */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  background-color: var(--color-cream-50);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-fg);
+  background-color: var(--color-cream-50);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(82, 82, 91, 0.25);
+  border-radius: 9999px;
+  border: 2px solid var(--color-cream-50);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(82, 82, 91, 0.4);
+}
+
+::selection {
+  background-color: var(--color-accent-500);
+  color: var(--color-ink-950);
+}
+
+a {
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+ * 工具类：渐变文字 / 网格背景 / 噪点
+ * ============================================================ */
+.text-gradient-amber {
+  background: linear-gradient(135deg, var(--color-accent-600) 0%, var(--color-accent-400) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-grid-fade {
+  background-image:
+    linear-gradient(to right, rgba(10, 10, 11, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10, 10, 11, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+.bg-grid-dark {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Marquee 滚动动画 - 在 Marquee.vue 组件作用域内定义 */
+
+/* ============================================================
+ * 淡入 + 上移
+ * ============================================================ */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ============================================================
+ * 状态点（live 脉冲）
+ * ============================================================ */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes ping-soft {
+  0% { transform: scale(1); opacity: 0.6; }
+  75%, 100% { transform: scale(2.5); opacity: 0; }
+}
+.ping-soft::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: inherit;
+  animation: ping-soft 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ============================================================
+ * 数字滚动条
+ * ============================================================ */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ============================================================
+ * Hover Lift Card
+ * ============================================================ */
+.lift-card {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+}
+.lift-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+ * Markdown 渲染（文档中心）
+ * ============================================================ */
+.prose-docs {
+  --tw-prose-body: #52525B;
+  --tw-prose-headings: #0A0A0A;
+  --tw-prose-links: #B45309;
+  --tw-prose-bold: #0A0A0A;
+  --tw-prose-code: #B45309;
+  --tw-prose-pre-bg: #0A0A0B;
+  --tw-prose-pre-code: #FAFAF7;
+  --tw-prose-quotes: #52525B;
+  --tw-prose-quote-borders: #D97706;
+  --tw-prose-bullets: #D4D4CC;
+  --tw-prose-hr: #E4E4DC;
+  --tw-prose-th-borders: #D4D4CC;
+  --tw-prose-td-borders: #E4E4DC;
+  max-width: none;
+  line-height: 1.75;
+  font-size: 0.95rem;
+}
+
+.prose-docs h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+.prose-docs h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  scroll-margin-top: 6rem;
+}
+
+.prose-docs h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  scroll-margin-top: 6rem;
+}
+
+.prose-docs h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  scroll-margin-top: 6rem;
+}
+
+.prose-docs a {
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(180, 83, 9, 0.3);
+  transition: text-decoration-color 0.2s;
+}
+.prose-docs a:hover {
+  text-decoration-color: var(--color-accent-600);
+}
+
+.prose-docs pre {
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  border: 1px solid var(--color-ink-700);
+  background: var(--color-ink-900);
+}
+
+.prose-docs code:not(pre code) {
+  background: var(--color-accent-50);
+  color: var(--color-accent-700);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.35rem;
+  font-size: 0.85em;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.prose-docs code:not(pre code)::before,
+.prose-docs code:not(pre code)::after {
+  content: '';
+}
+
+.prose-docs blockquote {
+  font-style: normal;
+  font-weight: 500;
+  background: var(--color-accent-50);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-left-width: 3px;
+  border-left-color: var(--color-accent-500);
+  color: var(--color-fg);
+}
+
+.prose-docs table {
+  font-size: 0.875rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.prose-docs img {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+}
+
+.prose-docs ul {
+  list-style: none;
+  padding-left: 0;
+}
+.prose-docs ul li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.prose-docs ul li::before {
+  content: '';
+  position: absolute;
+  left: 0.25rem;
+  top: 0.6rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--color-accent-500);
+}
+
+.prose-docs ol {
+  counter-reset: item;
+  padding-left: 0;
+  list-style: none;
+}
+.prose-docs ol li {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 0.5rem;
+  counter-increment: item;
+}
+.prose-docs ol li::before {
+  content: counter(item);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent-600);
+  background: var(--color-accent-50);
+  border: 1px solid var(--color-accent-200);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  line-height: 1;
+}
+
+/* ============================================================
+ * 容器工具类
+ * ============================================================ */
+@utility container-page {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Page transition 定义在 App.vue 的 <style> 中 */
