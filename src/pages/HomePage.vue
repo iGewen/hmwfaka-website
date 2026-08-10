@@ -66,7 +66,7 @@ useSeo({
   breadcrumb: [{ name: '首页', item: '/' }],
   speakable: {
     cssSelector: ['#features', '#how-it-works'],
-    about: url,
+    about: siteConfig.url,
   },
 })
 </script>
