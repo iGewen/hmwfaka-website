@@ -1,261 +1,303 @@
 ---
-title: Docker 部署
-description: 使用 Docker 在生产环境部署 HmwCard 自动发卡系统的完整指南
-order: 1
+title: Docker 部署详解
+description: HmwCard 何慕雯发卡系统的 Docker 生产环境部署架构与运维指南
+order: 3
 category: 部署
 ---
 
-# Docker 部署
+# Docker 部署详解
 
-本指南介绍如何在生产环境中使用 Docker 部署 HmwCard。HmwCard 全部组件均已容器化，包括 Web 应用、数据库、缓存、定时任务等。
+本文档介绍 HmwCard 的 Docker 部署架构、服务组件和运维操作。对于新用户，推荐使用 [快速开始](/docs/quick-start) 中的 `install.sh` 一键部署。
 
-## 部署架构
+## 系统架构
 
-HmwCard 的生产环境推荐架构如下：
-
-- **Nginx**：反向代理 + SSL 终止
-- **HmwCard App**：Vue 3 前端 + Node.js 后端
-- **MySQL 8.0**：业务数据存储
-- **Redis 7**：缓存与会话
-- **Cron Worker**：定时任务（订单超时、库存预警）
-
-## 环境要求
-
-| 资源 | 最低 | 推荐 |
-|------|------|------|
-| CPU | 1 核 | 2 核 |
-| 内存 | 1 GB | 2 GB |
-| 磁盘 | 20 GB | 50 GB SSD |
-| 带宽 | 1 Mbps | 5 Mbps |
-
-## 准备工作
-
-### 1. 服务器初始化
-
-```bash
-# 更新系统
-apt update && apt upgrade -y
-
-# 安装基础工具
-apt install -y curl wget git vim ufw
-
-# 配置防火墙
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw --force enable
+```
+Internet
+    ↓
+Nginx 反向代理 (jwilder/nginx-proxy)
+    ├── :80  → 自动跳转 :443
+    └── :443 → SSL 终止 → 转发到后端服务
+         ↓
+    ┌────────────────────────────────────┐
+    │  Docker Network: hmwcard-network   │
+    │                                    │
+    │  ┌─────────┐  ┌─────────┐         │
+    │  │  MySQL  │  │  Redis  │         │
+    │  │  :3306  │  │  :6379  │         │
+    │  └────┬────┘  └────┬────┘         │
+    │       │            │              │
+    │  ┌────┴────────────┴────┐         │
+    │  │    Node.js 后端       │         │
+    │  │    (hmwcard-backend)  │         │
+    │  │    :3000              │         │
+    │  └────────────┬──────────┘         │
+    │               │                    │
+    │  ┌────────────┴──────────┐         │
+    │  │   前端 Nginx           │         │
+    │  │   (hmwcard-frontend)  │         │
+    │  │   :80                  │         │
+    │  └───────────────────────┘         │
+    │                                    │
+    │  ┌───────────────────────┐         │
+    │  │  ACME 证书管理         │         │
+    │  │  (自动续签 SSL)        │         │
+    │  └───────────────────────┘         │
+    └────────────────────────────────────┘
 ```
 
-### 2. 安装 Docker
+## 服务组件
 
-```bash
-curl -fsSL https://get.docker.com | bash
-systemctl enable docker
-```
+### MySQL 8.0
 
-### 3. 安装 Docker Compose v2
+| 项目 | 说明 |
+|------|------|
+| 镜像 | `mysql:8.0` |
+| 端口 | 3306（仅容器内部访问） |
+| 数据卷 | `mysql_data:/var/lib/mysql` |
+| 健康检查 | `mysqladmin ping` 每 10 秒 |
+| 配置 | `docker/mysql/my.cnf` |
 
-Docker 20.10+ 已内置 Compose v2 插件，无需单独安装。验证：
+### Redis 7.4
 
-```bash
-docker compose version
-# Docker Compose version v2.24.0
-```
+| 项目 | 说明 |
+|------|------|
+| 镜像 | `redis:7.4-alpine` |
+| 端口 | 6379（仅容器内部访问） |
+| 数据卷 | `redis_data:/data` |
+| 认证 | 密码认证 |
+| 配置 | `docker/redis.conf` |
 
-## 部署步骤
+### Node.js 后端
 
-### 1. 拉取源码
+| 项目 | 说明 |
+|------|------|
+| 镜像 | `hmwcard-backend:latest`（本地构建） |
+| 端口 | 3000（仅绑定 localhost） |
+| ORM | Prisma |
+| 数据库 | MySQL 8.0 |
+| 缓存 | Redis 7.4 |
+| 健康检查 | `/health` 接口 |
 
-```bash
-cd /opt
-git clone https://github.com/iGeWen/hmwcard.git
-cd hmwcard
-```
+### 前端 Nginx
 
-### 2. 配置环境
+| 项目 | 说明 |
+|------|------|
+| 镜像 | `hmwcard-frontend:latest`（本地构建） |
+| 端口 | 80 |
+| 构建产物 | Vue 3 + Vite SSG 静态文件 |
+| SPA 回退 | `try_files $uri $uri/ /index.html` |
 
-```bash
-cp .env.production.example .env
-vim .env
-```
+### Nginx 反向代理
 
-关键字段说明：
+| 项目 | 说明 |
+|------|------|
+| 镜像 | `jwilder/nginx-proxy:alpine` |
+| 端口 | 80, 443 |
+| 功能 | 自动发现容器并按 `VIRTUAL_HOST` 路由 |
+| 配置 | 自动生成 |
+
+### ACME 证书管理
+
+| 项目 | 说明 |
+|------|------|
+| 镜像 | `nginxproxy/acme-companion:2.8` |
+| 功能 | 自动申请和续签 Let's Encrypt 证书 |
+| 触发 | 检测容器的 `LETSENCRYPT_HOST` 环境变量 |
+
+## Docker Compose 配置
+
+### docker-compose.yml（基础服务）
+
+包含 MySQL、Redis、后端、前端四个核心服务。
+
+### docker-compose.ssl.yml（SSL 叠加配置）
+
+在基础服务之上添加 nginx-proxy 和 acme-companion，用于生产环境。
+
+### docker-compose.http.yml（HTTP 叠加配置）
+
+仅使用基础服务 + HTTP 模式的前端，无 SSL 证书。
+
+## 数据持久化
+
+| 数据卷 | 内容 | 说明 |
+|--------|------|------|
+| `mysql_data` | MySQL 数据文件 | 数据库所有表数据 |
+| `redis_data` | Redis 持久化数据 | RDB/AOF |
+| `backend/uploads` | 上传文件（宿主机绑定） | 图片等静态资源 |
+| `backend/logs` | 后端日志（宿主机绑定） | 应用日志 |
+
+## 环境变量
+
+### 根目录 .env（Docker Compose 使用）
 
 ```env
-# 必须修改
-DB_PASSWORD=<strong-password>
-JWT_SECRET=<random-32-chars-string>
-ADMIN_PASSWORD=<strong-password>
+DOMAIN=your-domain.com
+EMAIL=admin@your-domain.com
 
-# 站点信息
-SITE_URL=https://your-domain.com
-SITE_NAME=我的发卡站
+# MySQL
+MYSQL_ROOT_PASSWORD=auto_generated
+MYSQL_DATABASE=hmwcard
+MYSQL_USER=hmwcard
+MYSQL_PASSWORD=auto_generated
+MYSQL_PORT=3306
+
+# Redis
+REDIS_PASSWORD=auto_generated
+REDIS_PORT=6379
+
+# 后端
+BACKEND_PORT=3000
+
+# SSL
+LETSENCRYPT_HOST=your-domain.com
+LETSENCRYPT_EMAIL=admin@your-domain.com
+VIRTUAL_HOST=your-domain.com
+VIRTUAL_PORT=80
 ```
 
-### 3. 启动服务
+### backend/.env（Node.js 后端使用）
 
-```bash
-# 拉取镜像并启动
-docker compose -f docker-compose.prod.yml up -d
+```env
+NODE_ENV=production
+PORT=3000
+APP_URL=https://your-domain.com
+FRONTEND_URL=https://your-domain.com
 
-# 查看启动状态
-docker compose -f docker-compose.prod.yml ps
+DATABASE_URL=mysql://hmwcard:password@mysql:3306/hmwcard
+DB_HOST=mysql
+DB_PORT=3306
+DB_USER=hmwcard
+DB_PASSWORD=password
+DB_NAME=hmwcard
+
+REDIS_URL=redis://redis:6379
+REDIS_PASSWORD=password
+
+JWT_SECRET=auto_generated
+JWT_EXPIRES_IN=24h
+ENCRYPTION_KEY=auto_generated
+
+UPLOAD_PATH=./uploads
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=auto_generated
 ```
-
-### 4. 初始化数据库
-
-```bash
-docker compose exec app npm run db:migrate
-docker compose exec app npm run db:seed
-```
-
-### 5. 配置 Nginx + SSL
-
-使用宝塔面板或 certbot 配置反向代理：
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-
-    client_max_body_size 20m;
-
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
-```
-
-### 6. 申请 SSL 证书
-
-```bash
-# 使用 certbot 申请 Let's Encrypt 免费证书
-apt install -y certbot python3-certbot-nginx
-certbot --nginx -d your-domain.com
-```
-
-## 验证部署
-
-访问以下地址确认部署成功：
-
-- 店铺首页：`https://your-domain.com`
-- 管理后台：`https://your-domain.com/admin`
-- 健康检查：`https://your-domain.com/api/health`
 
 ## 运维操作
+
+### 查看所有服务状态
+
+```bash
+docker compose -p hmwcard ps
+```
 
 ### 查看日志
 
 ```bash
 # 全部服务
-docker compose logs -f
+docker compose -p hmwcard logs -f
 
 # 单个服务
-docker compose logs -f app
-docker compose logs -f mysql
+docker compose -p hmwcard logs -f hmwcard-backend
+docker compose -p hmwcard logs -f hmwcard-mysql
+docker compose -p hmwcard logs -f hmwcard-nginx-proxy
 ```
 
 ### 重启服务
 
 ```bash
-docker compose restart app
+# 重启单个服务
+docker compose -p hmwcard restart hmwcard-backend
+
+# 重启全部
+docker compose -p hmwcard restart
 ```
 
-### 升级版本
+### 进入容器
 
 ```bash
-git pull
-docker compose pull
-docker compose up -d
-docker compose exec app npm run db:migrate
+# 进入后端容器
+docker compose -p hmwcard exec hmwcard-backend sh
+
+# 进入 MySQL
+docker compose -p hmwcard exec -e MYSQL_PWD='root密码' mysql mysql -u root hmwcard
 ```
 
-### 数据备份
+### 数据库备份与恢复
 
 ```bash
-# 备份数据库
-docker compose exec mysql mysqldump -u root -p hmwcard > backup_$(date +%Y%m%d).sql
+# 备份
+docker compose -p hmwcard exec -e MYSQL_PWD='root密码' mysql \
+  mysqldump -u root hmwcard > backup.sql
 
-# 备份卡密文件（如使用文件存储）
-tar -czf uploads_$(date +%Y%m%d).tar.gz ./uploads
-
-# 推荐配合 crontab 自动备份
-echo "0 3 * * * cd /opt/hmwcard && ./scripts/backup.sh" | crontab -
+# 恢复
+cat backup.sql | docker compose -p hmwcard exec -T -e MYSQL_PWD='root密码' mysql \
+  mysql -u root hmwcard
 ```
 
-## 性能调优
+### 数据库迁移
 
-### 1. 调整容器资源
-
-在 `docker-compose.prod.yml` 中限制资源：
-
-```yaml
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
+```bash
+docker compose -p hmwcard exec hmwcard-backend npx prisma migrate deploy
 ```
 
-### 2. 启用 Redis 缓存
+## 监控与健康检查
 
-确认 `.env` 中 Redis 已启用，并将 `CACHE_TTL` 调整为 300 秒以上。
+所有服务均配置了 Docker healthcheck：
 
-### 3. MySQL 调优
+| 服务 | 健康检查方式 |
+|------|-------------|
+| MySQL | `mysqladmin ping` |
+| Redis | `redis-cli ping` |
+| 后端 | HTTP GET `/health` |
+| 前端 | `wget localhost` |
 
-修改 `my.cnf`：
+查看健康状态：
 
-```ini
-[mysqld]
-innodb_buffer_pool_size = 512M
-innodb_log_file_size = 64M
-query_cache_size = 32M
+```bash
+docker compose -p hmwcard ps --format '{{.Names}} {{.Status}}'
 ```
 
 ## 故障排查
 
-### 容器启动失败
+### 容器反复重启
 
 ```bash
-# 查看具体错误
-docker compose logs app --tail 100
+# 查看退出原因
+docker compose -p hmwcard logs hmwcard-backend --tail 100
 
-# 常见原因
-# 1. 端口被占用 → 修改 docker-compose 中的端口映射
-# 2. 数据库密码错误 → 检查 .env 与 mysql 容器初始化是否一致
-# 3. 镜像拉取失败 → 配置国内镜像加速
+# 常见原因：
+# 1. 数据库连接失败 → 检查 MySQL 是否就绪
+# 2. 端口冲突 → 检查端口占用
+# 3. 配置错误 → 检查 backend/.env
 ```
 
-### 支付回调 404
+### SSL 证书未生效
 
-确认 Nginx 配置中 `proxy_pass` 末尾没有斜杠（除非明确需要），并且 `X-Forwarded-Proto` 已正确传递。
+```bash
+# 查看 acme 日志
+docker compose -p hmwcard -f docker-compose.yml -f docker-compose.ssl.yml logs hmwcard-acme
 
-### 前端白屏
+# 检查证书文件
+docker exec hmwcard-nginx-proxy ls /etc/nginx/certs/
 
-打开浏览器控制台，常见原因：
+# 手动触发重载
+docker exec hmwcard-nginx-proxy nginx -s reload
+```
 
-- 静态资源 404 → 检查 `public/` 目录权限
-- Mixed Content → 确认所有资源走 HTTPS
-- 路由 404 → 配置 Nginx 的 `try_files` 兜底
+### 性能问题
+
+```bash
+# 查看容器资源占用
+docker stats hmwcard-backend hmwcard-mysql hmwcard-redis
+
+# 检查慢查询
+docker compose -p hmwcard exec -e MYSQL_PWD='root密码' mysql \
+  mysql -u root -e "SHOW PROCESSLIST"
+```
 
 ## 下一步
 
-部署完成后，建议阅读：
-
-- [支付对接](/docs/payment) - 详细配置微信、支付宝、PayPal、Stripe
-- [常见问题](/docs/faq) - 运维中的高频问题
+- [快速开始](/docs/quick-start) — 一键部署指南
+- [API 参考](/docs/api-reference) — 后端接口文档
+- [常见问题](/docs/faq) — 更多运维问题
