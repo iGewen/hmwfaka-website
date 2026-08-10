@@ -48,6 +48,7 @@ function onScroll() {
   if (!sectionRef.value) return
   const rect = sectionRef.value.getBoundingClientRect()
   const total = rect.height - window.innerHeight
+  if (total <= 0) return
   const scrolled = Math.max(0, -rect.top)
   const progress = Math.min(1, scrolled / total)
   activeStep.value = Math.min(steps.length - 1, Math.floor(progress * steps.length))
