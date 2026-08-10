@@ -18,8 +18,8 @@ function show() {
   // 保存当前焦点元素，关闭时恢复
   triggerRef.value = document.activeElement as HTMLElement | null
   open.value = true
-  // 同时尝试复制微信号到剪贴板
-  copyWechatId()
+  // 重置复制状态（不自动复制，等用户手动点击复制按钮）
+  copied.value = false
   // 锁定 body 滚动
   if (typeof document !== 'undefined') {
     document.body.style.overflow = 'hidden'

@@ -108,6 +108,7 @@ watch(
     <!-- 文档中心首页 -->
     <section v-else-if="!doc && !slug" class="py-16 lg:py-20">
       <Container>
+        <!-- 顶部标题区 -->
         <div class="max-w-2xl mb-12">
           <span class="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle">/ docs</span>
           <h1 class="mt-3 font-display text-4xl lg:text-5xl font-bold text-ink-900 tracking-tight">
@@ -118,50 +119,44 @@ watch(
           </p>
         </div>
 
-        <!-- 快捷卡片 -->
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <RouterLink
-            v-for="item in (sidebar[0]?.items || []).slice(0, 6)"
-            :key="item.slug"
-            :to="`/docs/${item.slug}`"
-            class="lift-card group rounded-2xl border border-border bg-cream-50 p-6 hover:border-ink-900 hover:shadow-lift"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-ink-900 text-cream-50">
-                <AppIcon name="book" :size="18" />
-              </span>
-              <AppIcon name="arrow-up-right" :size="14" class="text-fg-subtle group-hover:text-ink-900" />
+        <!-- 所有分类的文档卡片 -->
+        <div class="space-y-12">
+          <div v-for="group in sidebar" :key="group.category">
+            <!-- 分类标题 -->
+            <div class="flex items-center gap-3 mb-5">
+              <span class="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle">{{ group.category }}</span>
+              <span class="text-fg-subtle/40">·</span>
+              <span class="font-mono text-[11px] text-fg-subtle/60">{{ group.items.length }} 篇</span>
             </div>
-            <h3 class="font-display text-base font-semibold text-ink-900 group-hover:text-accent-700 transition-colors">{{ item.title }}</h3>
-            <p class="mt-1 text-xs font-mono text-fg-subtle">/docs/{{ item.slug }}</p>
-          </RouterLink>
-        </div>
 
-        <!-- 完整侧边栏 -->
-        <div class="mt-16 grid lg:grid-cols-[260px_1fr] gap-8">
-          <aside class="lg:sticky lg:top-24 lg:self-start">
-            <div class="rounded-2xl border border-border bg-cream-50 p-5">
-              <DocSidebar />
-            </div>
-          </aside>
-          <div>
-            <h2 class="font-display text-2xl font-bold text-ink-900 tracking-tight">所有文档</h2>
-            <div class="mt-6 space-y-8">
-              <div v-for="group in sidebar" :key="group.category">
-                <h3 class="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle mb-3">{{ group.category }}</h3>
-                <ul class="space-y-2 border-l border-border">
-                  <li v-for="item in group.items" :key="item.slug" class="-ml-px">
-                    <RouterLink
-                      :to="`/docs/${item.slug}`"
-                      class="block border-l-2 border-transparent hover:border-accent-500 pl-4 py-1 text-base text-ink-900 hover:text-accent-700 transition-colors"
-                    >
-                      {{ item.title }}
-                    </RouterLink>
-                  </li>
-                </ul>
-              </div>
+            <!-- 该分类下的文档卡片网格 -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <RouterLink
+                v-for="item in group.items"
+                :key="item.slug"
+                :to="`/docs/${item.slug}`"
+                class="lift-card group rounded-2xl border border-border bg-cream-50 p-6 hover:border-ink-900 hover:shadow-lift"
+              >
+                <div class="flex items-center justify-between mb-4">
+                  <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-ink-900 text-cream-50">
+                    <AppIcon name="book" :size="18" />
+                  </span>
+                  <AppIcon name="arrow-up-right" :size="14" class="text-fg-subtle group-hover:text-ink-900" />
+                </div>
+                <h3 class="font-display text-base font-semibold text-ink-900 group-hover:text-accent-700 transition-colors">{{ item.title }}</h3>
+                <p class="mt-1 text-xs font-mono text-fg-subtle">/docs/{{ item.slug }}</p>
+              </RouterLink>
             </div>
           </div>
+        </div>
+
+        <!-- 在线演示 CTA -->
+        <div class="mt-16 rounded-2xl border border-border bg-ink-900 p-8 lg:p-10 text-center">
+          <h2 class="font-display text-2xl font-bold text-cream-50">在线体验</h2>
+          <p class="mt-2 text-cream-50/60 text-sm">想看看系统是什么样？访问我们的在线演示站点。</p>
+          <AppButton href="https://demo.ifaka.cc" variant="accent" size="lg" icon="external-link" class="mt-6 bg-accent-500 hover:bg-accent-600 text-white">
+            访问演示站点
+          </AppButton>
         </div>
       </Container>
     </section>
