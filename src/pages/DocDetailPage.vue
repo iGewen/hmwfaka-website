@@ -5,7 +5,6 @@ import Container from '@/components/common/Container.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import DocSidebar from '@/components/docs/DocSidebar.vue'
-import DocToc from '@/components/docs/DocToc.vue'
 import DocPrevNext from '@/components/docs/DocPrevNext.vue'
 import { useSeo } from '@/composables/useSeo'
 import { siteConfig } from '@/data/site'
@@ -164,7 +163,7 @@ watch(
     <!-- 文档详情 -->
     <section v-else class="py-10 lg:py-12">
       <Container>
-        <div class="grid lg:grid-cols-[240px_minmax(0,1fr)_200px] gap-8">
+        <div class="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-8">
           <!-- Sidebar -->
           <aside class="hidden lg:block">
             <div class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">
@@ -220,13 +219,6 @@ watch(
 
             <DocPrevNext :prev="prevNext.prev" :next="prevNext.next" />
           </article>
-
-          <!-- TOC -->
-          <aside class="hidden lg:block">
-            <div class="sticky top-24">
-              <DocToc :items="parsed?.toc || []" />
-            </div>
-          </aside>
         </div>
       </Container>
     </section>
