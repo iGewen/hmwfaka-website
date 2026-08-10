@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, reactive } from 'vue'
+import { computed, ref, watch, reactive, nextTick } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import Container from '@/components/common/Container.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -13,10 +13,11 @@ import { renderMarkdown } from '@/lib/markdown'
 
 const route = useRoute()
 
+// 首页（无 slug）默认显示 introduction
 const slug = computed(() => {
   const s = route.params.slug
   if (Array.isArray(s)) return s.join('/')
-  return (s as string) || ''
+  return (s as string) || 'introduction'
 })
 
 const doc = computed(() => getDocBySlug(slug.value))
@@ -50,11 +51,17 @@ const seoState = reactive({
 })
 useSeo(seoState)
 
-// 路由变化时更新 SEO + 关闭移动端侧边栏
+// 路由变化时：更新 SEO + 关闭移动端侧边栏 + 滚动到顶部
 watch(
   () => route.fullPath,
   () => {
     closeSidebarMobile()
+    // 滚动到顶部（仅客户端）
+    nextTick(() => {
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'instant' })
+      }
+    })
     if (parsed.value && doc.value) {
       seoState.title = `${parsed.value.title} - ${siteConfig.name} 文档`
       seoState.description =
@@ -93,7 +100,7 @@ watch(
     </section>
 
     <!-- 文档不存在 -->
-    <section v-if="!doc && slug" class="py-24">
+    <section v-if="!doc" class="py-24">
       <Container size="narrow" class="text-center">
         <AppIcon name="file-text" :size="48" class="text-fg-subtle/40 mx-auto" />
         <h1 class="mt-4 font-display text-2xl font-bold text-ink-900">文档不存在</h1>
@@ -104,63 +111,7 @@ watch(
       </Container>
     </section>
 
-    <!-- 文档中心首页 -->
-    <section v-else-if="!doc && !slug" class="py-16 lg:py-20">
-      <Container>
-        <!-- 顶部标题区 -->
-        <div class="max-w-2xl mb-12">
-          <span class="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle">/ docs</span>
-          <h1 class="mt-3 font-display text-4xl lg:text-5xl font-bold text-ink-900 tracking-tight">
-            文档中心
-          </h1>
-          <p class="mt-4 text-base lg:text-lg text-fg-muted leading-relaxed">
-            从快速开始到深度配置，这里有您需要的全部资料。
-          </p>
-        </div>
-
-        <!-- 所有分类的文档卡片 -->
-        <div class="space-y-12">
-          <div v-for="group in sidebar" :key="group.category">
-            <!-- 分类标题 -->
-            <div class="flex items-center gap-3 mb-5">
-              <span class="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle">{{ group.category }}</span>
-              <span class="text-fg-subtle/40">·</span>
-              <span class="font-mono text-[11px] text-fg-subtle/60">{{ group.items.length }} 篇</span>
-            </div>
-
-            <!-- 该分类下的文档卡片网格 -->
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <RouterLink
-                v-for="item in group.items"
-                :key="item.slug"
-                :to="`/docs/${item.slug}`"
-                class="lift-card group rounded-2xl border border-border bg-cream-50 p-6 hover:border-ink-900 hover:shadow-lift"
-              >
-                <div class="flex items-center justify-between mb-4">
-                  <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-ink-900 text-cream-50">
-                    <AppIcon name="book" :size="18" />
-                  </span>
-                  <AppIcon name="arrow-up-right" :size="14" class="text-fg-subtle group-hover:text-ink-900" />
-                </div>
-                <h3 class="font-display text-base font-semibold text-ink-900 group-hover:text-accent-700 transition-colors">{{ item.title }}</h3>
-                <p class="mt-1 text-xs font-mono text-fg-subtle">/docs/{{ item.slug }}</p>
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-
-        <!-- 在线演示 CTA -->
-        <div class="mt-16 rounded-2xl border border-border bg-ink-900 p-8 lg:p-10 text-center">
-          <h2 class="font-display text-2xl font-bold text-cream-50">在线体验</h2>
-          <p class="mt-2 text-cream-50/60 text-sm">想看看系统是什么样？访问我们的在线演示站点。</p>
-          <AppButton href="https://demo.ifaka.cc" variant="accent" size="lg" icon="external-link" class="mt-6 bg-accent-500 hover:bg-accent-600 text-white">
-            访问演示站点
-          </AppButton>
-        </div>
-      </Container>
-    </section>
-
-    <!-- 文档详情 -->
+    <!-- 文档内容（首页默认显示 introduction） -->
     <section v-else class="py-10 lg:py-12">
       <Container>
         <div class="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-8">
