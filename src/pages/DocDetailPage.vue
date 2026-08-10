@@ -14,11 +14,12 @@ import { renderMarkdown } from '@/lib/markdown'
 
 const route = useRoute()
 
-// 首页（无 slug）默认显示 introduction
+// 首页（无 slug）默认显示 introduction；去除尾部斜杠避免路由不匹配
 const slug = computed(() => {
   const s = route.params.slug
-  if (Array.isArray(s)) return s.join('/')
-  return (s as string) || 'introduction'
+  let raw = Array.isArray(s) ? s.join('/') : (s as string) || 'introduction'
+  // 去除尾部斜杠（如 "quick-start/" → "quick-start"）
+  return raw.replace(/\/+$/, '') || 'introduction'
 })
 
 const doc = computed(() => getDocBySlug(slug.value))
