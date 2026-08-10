@@ -1,149 +1,215 @@
 ---
 title: 常见问题
-description: HmwCard 自动发卡系统使用中的高频问题与解答
-order: 1
+description: HmwCard 何慕雯发卡系统使用中的高频问题与解答
+order: 6
 category: 常见问题
 ---
 
 # 常见问题
 
-汇总用户在使用 HmwCard 过程中最常遇到的问题。如未找到答案，请前往 [联系我们](/contact) 提交工单。
-
-## 购买与授权
-
-### 购买后如何获取源码？
-
-付款后我们会通过邮件发送源码包和部署文档，同时包含一个临时的在线演示账号供您测试。如果没收到邮件，请检查垃圾邮件文件夹，或联系客服 igewen@126.com。
-
-### 三个版本有什么区别？
-
-所有版本均为完整源码，功能无限制。区别仅在于售后服务：
-
-- **基础版 ¥89**：自行部署，6 个月答疑与更新
-- **专业版 ¥199**：免费远程部署 + 1 次支付对接 + 1 次功能定制，1 年售后
-- **至尊版 ¥299**：2 次支付对接 + 2 次功能定制，2 年优先响应售后
-
-### 是否支持二次开发？
-
-完全支持。我们交付的是完整未加密的源码，基于 Vue 3 + TypeScript 构建，代码结构清晰、注释完善。您可以根据需求任意修改。
+汇总用户在使用和部署 HmwCard 过程中最常遇到的问题。如未找到答案，请前往 [联系我们](/contact) 提交工单。
 
 ## 部署相关
 
-### 支持哪些服务器环境？
+### 安装脚本运行失败怎么办？
 
-支持所有主流 Linux 发行版（Ubuntu 18.04+、CentOS 7+、Debian 10+）。推荐使用 Docker 进行容器化部署，最低 1 核 1G 即可运行。
+**Docker 安装失败：**
+- 国内服务器可能无法访问 `get.docker.com`，脚本会自动切换到阿里云镜像源
+- 如仍失败，可手动安装 Docker 后重新运行脚本：
+  ```bash
+  # Ubuntu/Debian
+  apt update && apt install -y docker.io docker-compose-plugin
+  systemctl enable docker && systemctl start docker
+  ```
 
-### 必须使用 Docker 吗？
+**内存不足：**
+- 脚本检测到内存 ≤ 2GB 时会自动建议配置 Swap
+- 也可手动配置：
+  ```bash
+  fallocate -l 2G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  ```
 
-强烈推荐 Docker。如不使用 Docker，需自行安装 Node.js 18+、MySQL 8、Redis 7、Nginx 等依赖，配置较为繁琐。
+**端口被占用：**
+- 确保服务器 80、443 端口未被其他程序占用
+- 查看端口占用：`ss -tlnp | grep -E ':80|:443'`
 
-### 数据库可以使用 SQLite 吗？
+### 安装中断了怎么办？
 
-可以。开发环境默认 SQLite，但生产环境建议使用 MySQL，性能更稳定。
+重新运行 `bash install.sh`，脚本会检测到上次中断的配置状态，询问是否恢复继续安装。
+
+### SSL 证书申请失败？
+
+常见原因：
+1. **域名未解析** — 确保域名 A 记录已指向服务器 IP（DNS 生效可能需要几分钟到几小时）
+2. **端口未开放** — Let's Encrypt 需要通过 80 端口验证域名所有权
+3. **频率限制** — Let's Encrypt 同一域名每周最多申请 5 次，等一段时间再试
+
+查看证书申请日志：
+```bash
+docker compose -p hmwcard -f docker-compose.yml -f docker-compose.ssl.yml logs hmwcard-acme
+```
+
+### 前端页面打开白屏？
+
+1. 检查前端容器是否正常运行：
+   ```bash
+   docker compose -p hmwcard ps hmwcard-frontend
+   ```
+2. 查看前端容器日志：
+   ```bash
+   docker compose -p hmwcard logs hmwcard-frontend
+   ```
+3. 确认 nginx-proxy 配置已生成：
+   ```bash
+   docker exec hmwcard-nginx-proxy cat /etc/nginx/conf.d/default.conf | grep your-domain
+   ```
+
+### 后端 API 报错 500？
+
+1. 查看后端日志：
+   ```bash
+   docker compose -p hmwcard logs hmwcard-backend --tail 50
+   ```
+2. 确认数据库连接正常：
+   ```bash
+   docker compose -p hmwcard exec hmwcard-backend node -e "console.log('OK')"
+   ```
+3. 确认 MySQL 已就绪：
+   ```bash
+   docker compose -p hmwcard exec -e MYSQL_PWD='你的密码' mysql mysqladmin ping -h localhost -u root
+   ```
+
+---
 
 ## 支付相关
 
-### 个人没有营业执照，能用吗？
+### 个人没有营业执照怎么收款？
 
-国内微信支付、支付宝均需要营业执照。如无执照，可考虑：
+国内微信支付、支付宝均需要营业执照。可选方案：
+- 注册个体工商户（成本低，可开对公账户）
+- 使用 PayPal 收款（个人可注册，面向海外用户）
+- Stripe 香港账户（支持国内个人申请）
 
-- 个体工商户代办（成本低）
-- 使用 PayPal 海外收款（个人可注册）
-- 第三方聚合支付（费率略高）
+### 支付回调收不到？
 
-### 支付宝和微信哪个费率低？
+1. 确认回调 URL 能被公网访问
+2. 检查 nginx-proxy 是否正确转发到后端
+3. 查看后端日志确认是否收到回调：
+   ```bash
+   docker compose -p hmwcard logs hmwcard-backend | grep -i notify
+   ```
+4. 确认支付平台后台的回调地址配置正确
 
-标准费率均为 0.6%。流水达到一定量后均可申请优惠：微信可至 0.38%，支付宝通常 0.55%。
+### 支付成功但订单状态未更新？
 
-### PayPal 被恶意争议怎么办？
+1. 检查回调是否被签名验证拒绝（查看后端日志）
+2. 确认回调金额与订单金额一致（系统会校验金额防止篡改）
+3. 手动查询订单状态：
+   ```bash
+   curl https://your-domain.com/api/payment/{orderNo}/alipay/status
+   ```
 
-PayPal 买家保护较严格，需保留完整证据链：
-
-1. 卡密交付日志（含 IP、UA、时间）
-2. 用户兑换时间戳
-3. 商品页面"不支持退款"声明截图
-
-具体处理策略可参考博客文章 [卖虚拟商品被退款薅羊毛怎么办](/blog/refund-protection)。
+---
 
 ## 使用相关
 
-### 卡密会重复发送吗？
+### 卡密会重复发放吗？
 
-不会。系统使用数据库事务 + 行级锁，确保每张卡密只能被消费一次。即使高并发也不会重复。
+不会。系统使用数据库事务 + 行级锁确保每张卡密只被消费一次，高并发场景下也不会重复。
 
 ### 如何批量导入卡密？
 
-进入「商品管理」→ 选择商品 →「批量导入」，支持以下格式：
+在管理后台「商品管理」→ 选择商品 →「卡密管理」→「批量导入」，支持每行一个卡密，单次最多 10000 条。
 
-- 文本（每行一个）
-- Excel（.xlsx）
-- CSV
+也可以通过 API 批量导入：
 
-单次最大支持 10000 条。
+```http
+POST /api/admin/products/:id/card-secrets/batch
+Content-Type: application/json
 
-### 库存预警如何配置？
-
-进入「系统设置」→「库存预警」，配置阈值（如库存 < 10 时邮件提醒）。支持多渠道通知（邮件、企业微信、Telegram）。
-
-### 是否支持分销？
-
-当前版本（v2.0）暂不支持分销。分销功能在 v2.1 路线图中，预计 2025 年 Q1 发布。
-
-## 数据安全
+{
+  "secrets": "CARD-XXXX-1\nCARD-XXXX-2\nCARD-XXXX-3"
+}
+```
 
 ### 数据库如何备份？
 
-系统内置自动备份脚本，建议配合 cron 定时执行：
-
 ```bash
-0 3 * * * cd /opt/hmwcard && docker compose exec mysql mysqldump -u root -p$DB_PASSWORD hmwcard > /backup/db_$(date +\%Y\%m\%d).sql
+# 进入项目目录
+cd /var/www/wwwroot/hmwcard
+
+# 备份数据库
+docker compose -p hmwcard exec -e MYSQL_PWD='你的root密码' mysql \
+  mysqldump -u root hmwcard > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
-### 卡密是加密存储的吗？
-
-是的。卡密在数据库中使用 AES-256 加密存储，仅在发货时解密。
-
-### 系统会被攻击吗？
-
-系统内置多重防护：
-
-- 接口签名验证
-- 限流防刷（每 IP 每分钟 30 次）
-- SQL 注入防护
-- XSS 过滤
-- CSRF Token
-
-但安全是持续过程，建议：
-
-- 定期更新到最新版本
-- 服务器启用防火墙
-- SSL 证书保持有效
-- 数据库不对外开放端口
-
-## 其它问题
-
-### 如何升级到新版本？
+建议配置定时自动备份：
 
 ```bash
-cd /opt/hmwcard
+# 编辑 crontab
+crontab -e
+
+# 每天凌晨 3 点备份
+0 3 * * * cd /var/www/wwwroot/hmwcard && docker compose -p hmwcard exec -e MYSQL_PWD='密码' mysql mysqldump -u root hmwcard > /backup/db_$(date +\%Y\%m\%d).sql
+```
+
+### 如何升级版本？
+
+```bash
+cd /var/www/wwwroot/hmwcard
 git pull
-docker compose pull
-docker compose up -d
-docker compose exec app npm run db:migrate
+bash install.sh
+# 选择相同模式，脚本会保留现有配置
 ```
 
-升级前请务必备份数据库。
+升级前务必备份数据库。
 
-### 如何反馈 Bug？
+---
 
-欢迎通过以下渠道反馈：
+## 安全相关
 
-- 邮件：igewen@126.com
-- GitHub Issues（仅源码版用户）
-- 微信客服（购买后可添加）
+### 系统有哪些安全防护？
 
-我们会在 24 小时内回复，紧急问题优先处理。
+| 防护 | 说明 |
+|------|------|
+| 限流 | 所有 API 启用请求频率限制，登录和支付接口有额外限制 |
+| CSRF | 状态变更请求需通过 CSRF 验证（支付回调路径豁免） |
+| SQL 注入 | 使用 Prisma ORM 参数化查询，杜绝 SQL 注入 |
+| XSS | 前端 Vue 自动转义 + 后端 Helmet 安全头 |
+| 加密存储 | 卡密、支付私钥等敏感数据 AES-256 加密存储 |
+| 签名验证 | 支付回调均进行签名验证，防止伪造 |
 
-### 还没找到答案？
+### 服务器安全建议
 
-请前往 [联系我们](/contact) 提交工单，或添加微信客服一对一沟通。
+- 防火墙只开放 22、80、443 端口
+- SSH 禁用密码登录，使用密钥认证
+- 定期更新系统和 Docker 镜像
+- 数据库端口不对外开放（脚本默认仅暴露到 localhost）
+- SSL 证书保持有效（acme-companion 自动续签）
+
+---
+
+## 性能相关
+
+### 首次加载很慢？
+
+系统已移除 Google Fonts，使用系统字体栈。如仍慢：
+- 检查服务器带宽和延迟
+- 确认静态资源缓存配置正确（nginx 已配置 1 年缓存）
+
+### 高并发如何优化？
+
+- 增加 Swap 防止内存不足
+- 调整 MySQL 配置（innodb_buffer_pool_size）
+- 增加 Redis 缓存命中率
+- 考虑使用 CDN 加速静态资源
+
+---
+
+## 还没找到答案？
+
+请前往 [联系我们](/contact) 提交工单，或发送邮件至 shaocn@live.com。
