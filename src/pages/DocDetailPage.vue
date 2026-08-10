@@ -50,6 +50,14 @@ const seoState = reactive({
     author: { '@type': 'Organization', name: siteConfig.fullName },
     publisher: { '@type': 'Organization', name: siteConfig.fullName },
   } as object,
+  breadcrumb: [
+    { name: '首页', item: '/' },
+    { name: '文档中心', item: '/docs' },
+  ],
+  speakable: {
+    cssSelector: ['article header h1', 'article .prose-docs p:first-of-type'],
+    about: `${siteConfig.url}/docs`,
+  },
 })
 useSeo(seoState)
 
@@ -70,9 +78,16 @@ watch(
         parsed.value.description || `${parsed.value.title} - HmwCard 发卡系统文档`
       seoState.keywords = [parsed.value.title, 'HmwCard 文档', '发卡系统教程']
       seoState.path = `/docs/${slug.value}`
+      // 更新面包屑
+      seoState.breadcrumb = [
+        { name: '首页', item: '/' },
+        { name: '文档中心', item: '/docs' },
+        { name: parsed.value.title, item: `/docs/${slug.value}` },
+      ]
       const schemaObj = seoState.schema as any
       schemaObj.headline = parsed.value.title
       schemaObj.description = parsed.value.description
+      schemaObj.dateModified = new Date().toISOString().split('T')[0]
     }
   },
   { immediate: true },

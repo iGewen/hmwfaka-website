@@ -1,12 +1,56 @@
+# robots.txt for HmwCard 何慕雯发卡系统
+# https://www.ifaka.cc
+
 User-agent: *
 Allow: /
 
-# 文档与博客完全开放
-Allow: /docs/
-Allow: /blog/
-
-# 演示页不索引
+# 禁止爬取后台和API
 Disallow: /admin/
 Disallow: /api/
+Disallow: /login/
 
+# 允许爬取静态资源
+Allow: /assets/
+Allow: /images/
+Allow: /logo.svg
+Allow: /favicon.svg
+
+# Sitemap 地址
 Sitemap: https://www.ifaka.cc/sitemap.xml
+
+# 主流搜索引擎
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 1
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 1
+
+User-agent: Sogou web spider
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2
+
+User-agent: 360Spider
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2
+
+User-agent: YisouSpider
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2

@@ -8,10 +8,13 @@ interface SeoOptions {
   keywords?: string[]
   type?: 'website' | 'article'
   publishedTime?: string
+  modifiedTime?: string
   author?: string
   path?: string
   image?: string
   schema?: object | object[]
+  breadcrumb?: Array<{ name: string; item: string }>
+  speakable?: { cssSelector: string[]; about?: string }
 }
 
 /**
@@ -55,15 +58,53 @@ export function useSeo(options: SeoOptions | Ref<SeoOptions>) {
         { name: 'twitter:title', content: opt.title },
         { name: 'twitter:description', content: opt.description },
         { name: 'twitter:image', content: image },
+        // GEO (Generative Engine Optimization) - 生成式搜索引擎优化
+        { name: 'ai:description', content: opt.description },
+        { name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
       ],
       link: [{ rel: 'canonical', href: canonical }],
     }
 
+    // 结构化数据：合并自定义 schema + 面包屑
+    const schemas: object[] = []
     if (opt.schema) {
+      if (Array.isArray(opt.schema)) {
+        schemas.push(...opt.schema)
+      } else {
+        schemas.push(opt.schema)
+      }
+    }
+    // 面包屑结构化数据
+    if (opt.breadcrumb && opt.breadcrumb.length > 0) {
+      schemas.push({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: opt.breadcrumb.map((item, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          item: `${url}${item.item}`,
+        })),
+      })
+    }
+    // Speakable 结构化数据（语音助手 / AI 搜索）
+    if (opt.speakable && opt.speakable.cssSelector.length > 0) {
+      schemas.push({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: opt.title,
+        speakable: {
+          '@type': 'SpeakableSpecification',
+          cssSelector: opt.speakable.cssSelector,
+        },
+        url: canonical,
+      })
+    }
+    if (schemas.length > 0) {
       head.script = [
         {
           type: 'application/ld+json',
-          innerHTML: JSON.stringify(opt.schema),
+          innerHTML: JSON.stringify(schemas.length === 1 ? schemas[0] : schemas),
         },
       ]
     }

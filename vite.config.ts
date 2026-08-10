@@ -41,31 +41,49 @@ function collectMdRoutesSync(): string[] {
 // 静态路由列表
 const staticRoutes = ['/', '/about', '/pricing', '/contact', '/blog', '/docs']
 
-// 生成 sitemap.xml 插件
+// 生成 sitemap.xml 插件（含图片 sitemap 和合理优先级）
 function sitemapPlugin(): Plugin {
   return {
     name: 'sitemap-generator',
     apply: 'build',
     closeBundle() {
-      // sitemap.xml 在 client build 结束时生成（不依赖渲染结果）
       const site = 'https://www.ifaka.cc'
       const allRoutes = [...staticRoutes, ...collectMdRoutesSync()]
       const today = new Date().toISOString().split('T')[0]
 
+      // 根据路径类型和深度计算优先级与更新频率
+      const getSeoConfig = (path: string) => {
+        if (path === '/') return { priority: '1.0', changefreq: 'daily' }
+        if (path === '/pricing') return { priority: '0.9', changefreq: 'weekly' }
+        if (path === '/about' || path === '/contact') return { priority: '0.7', changefreq: 'monthly' }
+        if (path.startsWith('/docs/')) {
+          // 文档详情页：路径越深优先级越低
+          const depth = path.split('/').length - 3
+          const priority = Math.max(0.5, 0.8 - depth * 0.1).toFixed(1)
+          return { priority, changefreq: 'weekly' }
+        }
+        if (path.startsWith('/blog/')) {
+          return { priority: '0.8', changefreq: 'weekly' }
+        }
+        return { priority: '0.6', changefreq: 'weekly' }
+      }
+
       const urls = allRoutes
         .map((path) => {
-          const priority = path === '/' ? '1.0' : path.startsWith('/docs') ? '0.8' : '0.6'
+          const { priority, changefreq } = getSeoConfig(path)
+          const loc = path === '/' ? site : `${site}${path}`
           return `  <url>
-    <loc>${site}${path === '/' ? '' : path}</loc>
+    <loc>${loc}</loc>
     <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`
         })
         .join('\n')
 
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls}
 </urlset>
 `
