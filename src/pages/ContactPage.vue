@@ -26,7 +26,7 @@ useSeo({
 // 微信模态框
 const wechatModalRef = ref<InstanceType<typeof WechatModal> | null>(null)
 const WECHAT_ID = 'hewenwen20190921'
-const WECHAT_QR = '/images/wx.png'
+const WECHAT_QR = '/images/wxqrcode.jpg'
 
 function openWechat() {
   wechatModalRef.value?.show()
