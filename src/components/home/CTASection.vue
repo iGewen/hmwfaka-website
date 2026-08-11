@@ -23,7 +23,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
       </h2>
 
       <p class="mt-5 text-base lg:text-lg text-fg-muted leading-relaxed max-w-xl mx-auto">
-        一次购买，终身使用。完整源码交付，免费更新与技术支持。
+        一次购买，终身使用。完整成品系统交付，免费更新与技术支持。
       </p>
 
       <!-- 价格 -->
@@ -48,7 +48,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
       <div class="mt-12 pt-8 border-t border-border flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-mono text-fg-subtle">
         <span class="inline-flex items-center gap-1.5">
           <AppIcon name="check" :size="12" class="text-live-600" :stroke-width="2.5" />
-          7 天无理由退款
+          交付前可退款
         </span>
         <span class="inline-flex items-center gap-1.5">
           <AppIcon name="check" :size="12" class="text-live-600" :stroke-width="2.5" />
@@ -56,7 +56,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
         </span>
         <span class="inline-flex items-center gap-1.5">
           <AppIcon name="check" :size="12" class="text-live-600" :stroke-width="2.5" />
-          源码全给
+          成品交付
         </span>
         <span class="inline-flex items-center gap-1.5">
           <AppIcon name="check" :size="12" class="text-live-600" :stroke-width="2.5" />

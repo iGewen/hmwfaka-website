@@ -11,8 +11,8 @@ import { pricingPlans, addons } from '@/data/pricing'
 useSeo({
   title: `定价方案 - ${siteConfig.name}`,
   description:
-    '三个版本均为完整源码，区别在于售后服务。基础版 ¥89 起，专业版 ¥199，至尊版 ¥299。一次购买，终身使用。',
-  keywords: ['HmwCard 定价', '发卡系统价格', '自动发卡系统多少钱', '源码购买'],
+    '三个版本均为完整成品系统，区别在于售后服务。基础版 ¥89 起，专业版 ¥199，至尊版 ¥299。一次购买，终身使用。',
+  keywords: ['HmwCard 定价', '发卡系统价格', '自动发卡系统多少钱', '发卡系统购买'],
   path: '/pricing',
   schema: {
     '@context': 'https://schema.org',
@@ -39,7 +39,7 @@ useSeo({
         <SectionLabel
           label="/ pricing"
           title="简单透明的定价"
-          description="三个版本均为完整源码，区别仅在于售后服务。一次购买，终身使用。"
+          description="三个版本均为完整成品系统，区别仅在于售后服务。一次购买，终身使用。"
         />
 
         <!-- 价格标签：mono 风格 -->
@@ -50,11 +50,11 @@ useSeo({
           </span>
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-cream-100">
             <AppIcon name="check" :size="11" class="text-live-600" :stroke-width="2.5" />
-            源码全交付
+            成品系统交付
           </span>
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-cream-100">
             <AppIcon name="check" :size="11" class="text-live-600" :stroke-width="2.5" />
-            7 天无理由退款
+            交付前可退款
           </span>
         </div>
       </Container>
@@ -147,6 +147,15 @@ useSeo({
             <AppIcon name="check-circle" :size="13" class="text-live-600" :stroke-width="2" />
             支持对公转账 / 开票
           </span>
+        </div>
+
+        <!-- 退款说明 -->
+        <div class="mt-8 rounded-xl border border-border bg-cream-100/60 p-5 text-center">
+          <p class="text-sm text-fg-muted leading-relaxed">
+            <span class="font-medium text-ink-900">退款政策：</span>
+            系统为可复制数字产品，交付前支持退款；一旦交付完成，因产品性质无法撤回，概不退款。
+            购买前请充分评估需求，如有疑问请先联系我们确认。
+          </p>
         </div>
       </Container>
     </section>

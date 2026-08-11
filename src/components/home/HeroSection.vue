@@ -177,7 +177,7 @@ function onAfterLeave(el: Element) {
             </span>
             <span class="inline-flex items-center gap-1.5">
               <AppIcon name="check" :size="13" class="text-live-600" :stroke-width="2.5" />
-              完整源码交付
+              成品系统交付
             </span>
             <span class="inline-flex items-center gap-1.5">
               <AppIcon name="check" :size="13" class="text-live-600" :stroke-width="2.5" />

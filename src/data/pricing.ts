@@ -20,7 +20,7 @@ export const pricingPlans: PricingPlan[] = [
     price: 89,
     description: '适合有技术能力、能自己部署的用户',
     features: [
-      '完整系统源码',
+      '完整成品系统',
       '全部功能无限制',
       '部署文档 + 教程',
       '自行部署、自行运维',
@@ -36,7 +36,7 @@ export const pricingPlans: PricingPlan[] = [
     price: 199,
     description: '适合想省心、快速上线的商户',
     features: [
-      '完整系统源码',
+      '完整成品系统',
       '免费远程部署上线',
       '免费对接 1 次支付接口',
       '免费定制 1 个简单功能',
@@ -52,7 +52,7 @@ export const pricingPlans: PricingPlan[] = [
     price: 299,
     description: '适合需要深度定制和长期保障的团队',
     features: [
-      '完整系统源码',
+      '完整成品系统',
       '免费远程部署上线',
       '免费对接 2 次支付接口',
       '免费定制 2 个简单功能',
@@ -69,7 +69,7 @@ export interface ComparisonRow {
 }
 
 export const comparisonTable: ComparisonRow[] = [
-  { label: '完整系统源码', values: [true, true, true] },
+  { label: '完整成品系统', values: [true, true, true] },
   { label: '全部功能无限制', values: [true, true, true] },
   { label: '部署文档 + 教程', values: [true, true, true] },
   { label: '免费远程部署', values: [false, true, true] },
